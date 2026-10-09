@@ -57,6 +57,12 @@
         #sec-mapView.map-full > div:last-child { flex: 1 1 auto; min-height: 0; display: flex; }
         #sec-mapView.map-full #overviewMap { height: 100% !important; flex: 1 1 auto; }
         body.map-full-open { overflow: hidden; }
+        /* Pin de CVLI: caveira em círculo vermelho escuro, maior e com pulso, para se destacar no mapa */
+        .cvli-pin { background: transparent; border: 0; }
+        .cvli-pin .cvli-pin-i { position: relative; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ef4444, #7f1d1d 75%); border: 3px solid #fff; box-shadow: 0 0 0 2px #7f1d1d, 0 4px 10px rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+        .cvli-pin .cvli-pin-i::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 2px solid rgba(220,38,38,.65); animation: cvliPulso 1.8s ease-out infinite; }
+        .cvli-pin .cvli-pin-i::after { content: ""; position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); border: 7px solid transparent; border-top: 9px solid #7f1d1d; border-bottom: 0; }
+        @keyframes cvliPulso { 0% { transform: scale(.75); opacity: .9; } 100% { transform: scale(1.35); opacity: 0; } }
         .admin-only { display: none; }
         html.is-admin .admin-only { display: block; }
         .admin-cell { display: none; }
@@ -582,6 +588,7 @@
                         <span><i class="fa-solid fa-location-dot text-blue-600"></i> 2026</span>
                         <span><i class="fa-solid fa-location-dot text-red-600"></i> 2027</span>
                         <span class="text-slate-500 font-medium">Demais anos: cor própria</span>
+                        <span class="text-red-700"><i class="fa-solid fa-skull-crossbones"></i> CVLI</span>
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -3274,6 +3281,13 @@
             overviewMap.invalidateSize();
         }
 
+        function cvliIcon() {
+            return L.divIcon({
+                className: "cvli-pin",
+                html: '<div class="cvli-pin-i"><i class="fa-solid fa-skull-crossbones"></i></div>',
+                iconSize: [38, 47], iconAnchor: [19, 47], popupAnchor: [0, -44]
+            });
+        }
         function renderOverviewMap() {
             if (!overviewMap) return;
 
@@ -3303,7 +3317,9 @@
                 if (geoOk(Number(o.lat), Number(o.lng))) {
                     // 2026 = pin azul padrão; 2027 = vermelho; outros anos = cor própria
                     const anoO = anoDe(o);
-                    const marker = (anoO && anoO !== '2026')
+                    const marker = isCVLI(o)
+                        ? L.marker([o.lat, o.lng], { icon: cvliIcon(), zIndexOffset: 1000 })
+                        : (anoO && anoO !== '2026')
                         ? L.marker([o.lat, o.lng], { icon: pinIcon(anoO === '2027' ? '#dc2626' : anoCor(anoO)) })
                         : L.marker([o.lat, o.lng]);
                     
