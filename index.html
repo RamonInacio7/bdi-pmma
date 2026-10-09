@@ -50,6 +50,13 @@
         }
         #loginOverlay { display: none; }
         /* Recursos exclusivos do administrador */
+        /* Mapa Geral em tela cheia: filtros fixos no topo, mapa ocupa o restante */
+        #sec-mapView.map-full { position: fixed; inset: 0; z-index: 1000; background: #f1f5f9; padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+        #sec-mapView.map-full > * + * { margin-top: 0 !important; }
+        #sec-mapView.map-full > div:first-child { flex: 0 0 auto; max-height: 45vh; overflow: visible; }
+        #sec-mapView.map-full > div:last-child { flex: 1 1 auto; min-height: 0; display: flex; }
+        #sec-mapView.map-full #overviewMap { height: 100% !important; flex: 1 1 auto; }
+        body.map-full-open { overflow: hidden; }
         .admin-only { display: none; }
         html.is-admin .admin-only { display: block; }
         .admin-cell { display: none; }
@@ -623,6 +630,9 @@
                     </select>
                     <button onclick="resetMapFilters()" class="px-3 py-1.5 text-xs font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 rounded-lg transition-all">
                         Limpar Filtros
+                    </button>
+                    <button type="button" id="btnMapFull" onclick="toggleMapFullscreen()" title="Expandir mapa para tela cheia" aria-label="Expandir mapa para tela cheia" class="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-all flex items-center gap-1.5">
+                        <i id="btnMapFullIcon" class="fa-solid fa-expand"></i> <span id="btnMapFullTxt">Tela cheia</span>
                     </button>
                 </div>
             </div>
@@ -2829,6 +2839,7 @@
         // ==========================================
 
         function switchTab(tab) {
+            if (document.getElementById("sec-mapView").classList.contains("map-full")) toggleMapFullscreen(false);
             const tabs = ['dashboard', 'mapView', 'cadastro', 'tabela'];
             
             tabs.forEach(t => {
@@ -3332,6 +3343,22 @@
                 overviewMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
             }
         }
+
+        function toggleMapFullscreen(force) {
+            const sec = document.getElementById("sec-mapView");
+            const on = typeof force === "boolean" ? force : !sec.classList.contains("map-full");
+            sec.classList.toggle("map-full", on);
+            document.body.classList.toggle("map-full-open", on);
+            document.getElementById("btnMapFullIcon").className = "fa-solid " + (on ? "fa-compress" : "fa-expand");
+            document.getElementById("btnMapFullTxt").textContent = on ? "Sair da tela cheia" : "Tela cheia";
+            const b = document.getElementById("btnMapFull");
+            const t = on ? "Voltar ao modo normal" : "Expandir mapa para tela cheia";
+            b.title = t; b.setAttribute("aria-label", t);
+            setTimeout(() => { if (overviewMap) overviewMap.invalidateSize(); }, 60);
+        }
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape" && document.getElementById("sec-mapView").classList.contains("map-full")) toggleMapFullscreen(false);
+        });
 
         function resetMapFilters() {
             limparBatsSilencioso("mapFilterBat");
